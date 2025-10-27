@@ -106,7 +106,7 @@ int main() {
     VkDeviceMemory grassImageMemory;
     Image::FromFile(device,
         transferCommandPool,
-        "images/grass.jpg",
+        "images/grassBlue.jpg",
         VK_FORMAT_R8G8B8A8_UNORM,
         VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -130,6 +130,8 @@ int main() {
     plane->SetTexture(grassImage);
     
     Blades* blades = new Blades(device, transferCommandPool, planeDim);
+
+    blades->SetTexture(grassImage);
 
     vkDestroyCommandPool(device->GetVkDevice(), transferCommandPool, nullptr);
 

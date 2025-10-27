@@ -29,10 +29,12 @@ layout(location = 3) out vec4 outUp;
 
 void main() {
 	// TODO: Write gl_Position and any other shader outputs
-    outV0 = model * vec4(v0, 1);
-    outV1 = model * vec4(v1, 1);
-    outV2 = model * vec4(v2, 1);
-    outUp = model * vec4(up, 0);
+
+
+    outV0 = model * vec4(v0.xyz, 1);
+    outV1 = model * vec4(v1.xyz, 1);
+    outV2 = model * vec4(v2.xyz, 1);
+    outUp = model * vec4(up.xyz, 0);
 
     //Save the w values
     outV0.w = v0.w;
@@ -41,7 +43,7 @@ void main() {
     outUp.w = up.w;
 
 
-    gl_Position = model * vec4(v0, 1);
+    gl_Position = model * vec4(v0.xyz, 1);
 
 
 }

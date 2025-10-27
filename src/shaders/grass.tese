@@ -14,21 +14,22 @@ layout(location = 1) in vec4 inV1[];
 layout(location = 2) in vec4 inV2[];
 layout(location = 3) in vec4 inUp[];
 
-layout(location = 0) out vec4 outNormal;
+layout(location = 0) out vec3 outNormal;
+layout(location = 1) out vec2 outUV;
 
 void main() {
     float u = gl_TessCoord.x;
     float v = gl_TessCoord.y;
 
-    vec3 v0 = inV0[gl_InvocationID].xyz;
-    vec3 v1 = inV1[gl_InvocationID].xyz;
-    vec3 v2 = inV2[gl_InvocationID].xyz;
-    vec3 up = inUp[gl_InvocationID].xyz;
+    vec3 v0 = inV0[0].xyz;
+    vec3 v1 = inV1[0].xyz;
+    vec3 v2 = inV2[0].xyz;
+    vec3 up = inUp[0].xyz;
 
-    float orientation = inV0[gl_InvocationID].w;
-    float height = inV1[gl_InvocationID].w;
-    float width = = inV2[gl_InvocationID].w;
-    float stiffness = = inUp[gl_InvocationID].w;
+    float orientation = inV0[0].w;
+    float height = inV1[0].w;
+    float width = inV2[0].w;
+    float stiffness = inUp[0].w;
 
     
     vec3 a = v0 + v * (v1 - v0);
@@ -41,16 +42,22 @@ void main() {
     //Bitangent
     //For now, just assume up is always (0, 1, 0)
     vec3 t1 = vec3(cos(orientation), 0, sin(orientation));
-    c0 = c - width * t1;
-    c1 = c + width * t1;
+    vec3 c0 = c - width * t1;
+    vec3 c1 = c + width * t1;
 
     outNormal = normalize(cross(t0, t1));
-
+    outUV = vec2(u, v);
     //Square shape
 
-    vec3 interpoPos = (1 - u) * c0 + u * c1;
+    //vec3 interpoPos = (1 - u) * c0 + u * c1;
 
-    gl_Position = proj * view * interpoPos; 
+    //TriangleTip
+
+    float t = 0.5 + (u - 0.5) * (1 - max(v - 0.25, 0)/ (1 - 0.25));
+    vec3 interpoPos = (1 - t) * c0 + t * c1;
+
+
+    gl_Position = camera.proj * camera.view * vec4(interpoPos, 1); 
 
 
 	// TODO: Use u and v to parameterize along the grass blade and output positions for each vertex of the grass blade
