@@ -25,10 +25,7 @@ Afterwards, the control points are sent to the graphics pipeline with a tesselat
 ![](img/GrassNoWind.gif)
 
 ### Grass with Wind
-![](img/GrassWind.gif)
-
-### Grass with Wind
-![](img/GrassWind.gif)
+![](img/GrassWithWind.gif)
 
 ### Grass Culling
 ![](img/GrassCulling.gif)
