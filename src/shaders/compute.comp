@@ -4,6 +4,13 @@
 #define WORKGROUP_SIZE 32
 layout(local_size_x = WORKGROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
 
+
+#define WIND 1
+#define FORCE 1
+#define ORIENTATION_CULLING 1
+#define VIEW_FRUSTRUM_CULLING 1
+#define DISTANCE_CULLING 1
+
 layout(set = 0, binding = 0) uniform CameraBufferObject {
     mat4 view;
     mat4 proj;
@@ -52,12 +59,9 @@ bool inBounds(float value, float bounds) {
 void main() {
 	// Reset the number of blades to 0
 	if (gl_GlobalInvocationID.x == 0) {
-		numBlades.vertexCount = 8192;
+		numBlades.vertexCount = 0;
 	}
 	barrier(); // Wait till all threads reach this point
-
-   
-
 
 
     vec3 v0 = blades[gl_GlobalInvocationID.x].v0.xyz;
@@ -71,14 +75,15 @@ void main() {
     float stiffness = blades[gl_GlobalInvocationID.x].up.w;
 
     //For now, assume up is always (0, 1, 0)
-    vec3 bitangent = normalize(vec3(-cos(orientation), 0.0, sin(orientation))); 
+    vec3 bitangent = normalize(vec3(sin(orientation), 0.0, cos(orientation))); 
     vec3 forward = normalize(cross(bitangent, up));
     
     vec3 gravDir = vec3(0, -1, 0);
-    float gravConst = 9.806;
+    float gravConst = 9.806 * 1.5;
 
     vec3 enviroGrav = gravDir * gravConst;
     vec3 frontGrav = 0.25 * forward * gravConst;
+
 
     vec3 totalGrav = enviroGrav + frontGrav;
 
@@ -87,26 +92,30 @@ void main() {
 
     vec3 recovery = (iV2 - v2) * stiffness;
 
-    vec3 wind = vec3((cos(totalTime * 2) + 3) * 2, 0, (sin(totalTime * 3) + 3) * 2);
+    vec3 wind = vec3((cos((totalTime + v0.x * 5) * 1) + 2) * 2, 0, (sin((v0.z * 5 + totalTime) * 1.5) + 2) * 2);
     
     float directionalAlignment = 1 - abs(dot(normalize(wind), normalize(v2 - v0)));
     float heightRatio = dot(v2 - v0, up) / height;
-
-    vec3 windForce = wind * directionalAlignment * heightRatio;
-    //windForce = vec3(0, 0, 0);
-
-
-    v2 += (totalGrav + recovery + windForce) * deltaTime;
     
+    vec3 windForce = vec3(0, 0, 0);
+#if WIND
+    windForce = wind * directionalAlignment * heightRatio * (cos(totalTime * 1) + 4) * 1.5;
+#endif
+
+#if FORCE
+    v2 += (totalGrav + recovery + windForce) * deltaTime;
+#endif
 
     v2 = v2 - up * min(dot(up, v2 - v0), 0);
 
     float lProj = length(v2 - v0 - up * dot(v2 - v0, up));
     v1 = v0 + height * up * max(1 - lProj/height, 0.05 * max(lProj/height, 1));
 
-    float L = length(v1 - v0) + length(v2 - v1);
-
-    float r = L / height;
+    //float L = length(v1 - v0) + length(v2 - v1);
+    float L0 = length(v2 - v0);
+    float L1 = length(v1 - v0) + length(v2 - v1);
+    float L = ((2 * L0) + L1) / 3.0;
+    float r = height / L;
 
 
 
@@ -116,7 +125,43 @@ void main() {
     blades[gl_GlobalInvocationID.x].v1 = vec4(v1Corrected, height);
     blades[gl_GlobalInvocationID.x].v2 = vec4(v2Corrected, width);
 
-    culledBlades[gl_GlobalInvocationID.x] = blades[gl_GlobalInvocationID.x];
+    mat4 inverseView = inverse(camera.view);
+    vec3 cameraPos = inverseView[3].xyz;
+
+
+#if ORIENTATION_CULLING
+    
+    vec3 viewDir = normalize(v0 - cameraPos);
+    vec3 bladeDir = normalize(cross(up, forward));
+
+    if(abs(dot(viewDir, bladeDir)) > 0.9)
+    {
+        return;
+    }
+#endif
+#if VIEW_FRUSTRUM_CULLING
+    vec3 m = 0.25 * v0 + 0.5 * v1 + 0.25 * v2;
+    vec4 ndcM = camera.proj * camera.view * vec4(m, 1.0);
+    float h = ndcM.w + 0.5;
+    if(!(ndcM.x > -h && ndcM.x < h && ndcM.y > -h && ndcM.y < h && ndcM.z > -h && ndcM.z < h))
+    {
+        return;
+    }
+
+#endif
+#if DISTANCE_CULLING
+    
+    float dProj = length(v0 - cameraPos - up * dot(v0 - cameraPos, up));
+    int numBucket = 20;
+    float dMax = 30;
+    if ((gl_GlobalInvocationID.x % numBucket) < int(floor(numBucket * (1 - dProj / dMax)))) 
+    {
+        return;
+    }
+#endif
+
+
+    culledBlades[atomicAdd(numBlades.vertexCount, 1)] = blades[gl_GlobalInvocationID.x];
 
 
     // TODO: Apply forces on every blade and update the vertices in the buffer

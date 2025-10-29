@@ -41,7 +41,7 @@ void main() {
     vec3 t0 = normalize(b - a);
     //Bitangent
     //For now, just assume up is always (0, 1, 0)
-    vec3 t1 = vec3(cos(orientation), 0, sin(orientation));
+    vec3 t1 = vec3(sin(orientation), 0.0, cos(orientation));
     vec3 c0 = c - width * t1;
     vec3 c1 = c + width * t1;
 
