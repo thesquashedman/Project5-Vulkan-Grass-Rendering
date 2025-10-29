@@ -7,7 +7,7 @@ Vulkan Grass Rendering
 * Tested on: Windows 11, Intel Core Ultra 5 225f @ 3.3GHz, NVIDIA GeForce RTX 5060
 
 ### Description
-This project the paper [Responsive Real-Time Grass Rendering for General 3D Scenes](https://www.cg.tuwien.ac.at/research/publications/2017/JAHRMANN-2017-RRTG/JAHRMANN-2017-RRTG-draft.pdf) using Vulkan.
+This project implements the paper [Responsive Real-Time Grass Rendering for General 3D Scenes](https://www.cg.tuwien.ac.at/research/publications/2017/JAHRMANN-2017-RRTG/JAHRMANN-2017-RRTG-draft.pdf) using Vulkan.
 
 In the paper, the blades of grass are represented as 3 point cubic Bezier curves, upon which forces are applied on. The first control point of the bezier curve represents the base of the blade of grass, and is unmoving. The third control point in the bezier curve represents the tip of the grass blade, and has three forces applied to it: gravity, recovery, and wind. Finally, the second control point helps keep the blade of grass at a constant height.
 
